@@ -1,0 +1,5 @@
+venv
+keys.json
+__pycache__
+.env
+spider/__pycache__/*
