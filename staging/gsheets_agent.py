@@ -51,31 +51,3 @@ class GoogleSheets:
 
         last_row_number = len(self.sheet_object.col_values(1)) + 1
         self.sheet_object.insert_rows(rows, last_row_number)
-
-if __name__ == "__main__":
-
-    # from dotenv import dotenv_values
-    # config = dotenv_values(".env")
-    # GOOGLE_CREDENTIALS = dict(config)
-    # print(GOOGLE_CREDENTIALS)
-
-    with open("keys.json","r") as jfile:
-        GOOGLE_CREDENTIALS = dict(json.load(jfile))
-        print(GOOGLE_CREDENTIALS)
-
-    google_sheets = GoogleSheets(
-        credentials_file = GOOGLE_CREDENTIALS,
-        sheet_key=GOOGLE_CREDENTIALS['google_sheet_id'],
-        worksheet_name='prices')
-
-    # google_sheets.write_header_if_doesnt_exist(
-    #     ["Program", "Course", "Study_Center", 
-    #      "Name", "Registration_ID", "Email", "Complaint"])
-    
-    # google_sheets.append_rows([["Electrical Engineering",
-    #                             "Power Electronics",
-    #                             "Accra",
-    #                             "Michael Kofi Armah",
-    #                             "123456789",
-    #                             "user@example.com",
-    #                             "i need my modules"]])

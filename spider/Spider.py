@@ -73,7 +73,7 @@ class TcgSpider():
                 driver.get(card_url)
                 element = WebDriverWait(
                     driver, 20).until(
-                    EC.presence_of_element_located(
+                    EC.visibility_of_all_elements_located(
                         (By.CLASS_NAME, "product-details__header")))
 
             except TimeoutException:
@@ -82,34 +82,72 @@ class TcgSpider():
             card_soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             # get product name
-            product_name = card_soup.find(
-                'h1', {'class': 'product-details__name'})
-            data.update({"ProductName": product_name.text})
 
-            #image
+            product_name_element = WebDriverWait(
+                driver, 20).until(
+                EC.presence_of_element_located(
+                    (By.CLASS_NAME, "product-details__name")))
+
+            product_name = product_name_element.get_attribute("innerHTML")
+            data.update({"ProductName": product_name})
+
+            # product_name = card_soup.find(
+            #     'h1', {'class': 'product-details__name'})
+            # data.update({"ProductName": product_name.text})
+
+            # image
             # image_src = card_soup.find('img',{"class" : "v-lazy-image v-lazy-image-loaded"})
             # data.update({"image_src" : image_src['src']})
             # print(src)
 
             # get product price
-            product_price = card_soup.find(
-                'span', {'class': 'spotlight__price'})
-            data.update({"Price": product_price.text})
+            try:
+                product_price_element = WebDriverWait(
+                    driver, 20).until(
+                    EC.presence_of_element_located(
+                        (By.CLASS_NAME, "spotlight__price")))
+
+                assert product_name_element is not None
+            except (AssertionError, TimeoutException):
+                pass
+
+            else:
+                product_price = product_price_element.get_attribute(
+                    "innerHTML")
+                data.update({"Price": product_price})
+
+            # product_price = card_soup.find(
+            #     'span', {'class': 'spotlight__price'})
+            # data.update({"Price": product_price.text})
 
             # product seller
-            product_seller = card_soup.find(
-                'section', {'class': 'spotlight__seller'}).text
-
             # seller's name is usually represented as "sold by
             # <cardseller's name>"
-            pattern = "by (.*)"
             try:
-                match = re.search(pattern, product_seller)
-                product_seller = match.group(1)
-                data.update({"ProductSeller": product_seller})
-                assert match is not None
-            except AssertionError:
-                print("coudn't get card seller's name")  # log
+                product_seller_present = WebDriverWait(
+                    driver, 20).until(
+                    EC.text_to_be_present_in_element(
+                        (By.CLASS_NAME, "spotlight__seller"), "Sold"))
+                assert product_seller_present is True
+
+            except (AssertionError, TimeoutException):
+                print("Could not retrieve product seller name")
+                data.update({"ProductSeller": None})
+            else:
+                product_seller = card_soup.find(
+                    'section', {'class': 'spotlight__seller'}).text
+
+                pattern = "by (.*)"
+                try:
+                    match = re.search(pattern, product_seller)
+                    product_seller = match.group(1)
+                    data.update({"ProductSeller": product_seller})
+                    assert match is not None
+                except AssertionError:
+                    print("coudn't get card seller's name")  # log
+
+            finally:
+                pass
 
             # current price point
             current_price_points = card_soup.find(
@@ -123,7 +161,8 @@ class TcgSpider():
                     assert cpp_data.__contains__("-") is not True
                     amount_isavailable = cpp_data.split("$")
                     # dictionary key | strip off all whitespaces
-                    amount_label = amount_isavailable[0].strip().replace(" ","_").lower()
+                    amount_label = amount_isavailable[0].strip().replace(
+                        " ", "_").lower()
                     amount_value = amount_isavailable[1]  # dictionary value
 
                     # update with available true data
@@ -133,17 +172,15 @@ class TcgSpider():
 
                     no_amount = cpp_data.split("-")
                     # update with null value represented as -
-                    data.update({no_amount[0].strip().replace(" ","_").lower(): None})
+                    data.update(
+                        {no_amount[0].strip().replace(" ", "_").lower(): None})
 
                 finally:
                     continue
 
-
-
             current_time = datetime.datetime.utcnow()
             data.update({"Date": str(current_time)})
             data.update({"Ts": current_time.timestamp()})
-
 
             if i == stop_condition:
                 break
