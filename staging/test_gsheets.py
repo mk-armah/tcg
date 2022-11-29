@@ -82,15 +82,17 @@ def test_append_rows(test_google_sheet_connection):
 
     google_sheet = test_google_sheet_connection
     
-    feedback = google_sheet.append_rows([["Code Card - Silver Tempest Booster Pack - SWSH12: Silver Tempest (SWSH12)",
-                                '$0.25',
-                                "LisasLilCardStore",
-                                0.14,
-                                None,
-                                0.16,
-                                "2022-11-26 09:18:18.543640",
-                                1669454299]])
-    print(feedback)
+    try:
+        google_sheet.append_rows([["Code Card - Silver Tempest Booster Pack - SWSH12: Silver Tempest (SWSH12)",
+                                    "$0.25",
+                                    "LisasLilCardStore",
+                                    0.14,
+                                    None,
+                                    0.16,
+                                    "2022-11-26 09:18:18.543640",
+                                    1669454299]])
+    except Exception as exc:
+        print("Unable to load to excel")
                                 							
     
 if __name__ == '__main__':

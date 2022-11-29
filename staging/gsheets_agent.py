@@ -39,7 +39,7 @@ class GoogleSheets:
 
 
     def write_header_if_doesnt_exist(self, columns: List[str]) -> None:
-        """write the columns for the google sheet if there is None """
+        """ write the columns for the google sheet if there is None """
 
         data = self.sheet_object.get_all_values()
         if not data:

@@ -17,22 +17,29 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+from .settings import ChromeSettings
+import staging.schema as schema
 
 
-class TcgSpider():
+class TcgSpider(ChromeSettings):
 
     def __init__(self, path: str = 'default', use_default_query=True, **query):
+        super(TcgSpider,self).__init__()
 
+        
         self.host = 'https://www.tcgplayer.com'  # hostname
         self.path = path if path != 'default' else "/search/pokemon/product"  # path parameters
 
         # set query parameters
         if use_default_query:
             self.query = "?productLineName=pokemon&view=grid&ProductTypeName=Cards&page={}&CardType=Pokemon&inStock=true"
+
         else:
             self.query = "?productLineName={}&view={}&productTypeName={}&page={}&CardType={}&inStock={}"
 
             try:
+          
                 self.query = self.query.format(
                     query['productLineName'],
                     query['view'],
@@ -40,11 +47,13 @@ class TcgSpider():
                     query['page'],
                     query['CardType'],
                     query['inStock'])
+          
             except KeyError as keyerror:
                 print("set parameter for : {}".format(keyerror))
 
         # url to scrape
         self.url = self.host + self.path + self.query
+
 
     def crawl(self, page, stop_condition: int | None = None):
         """
@@ -58,7 +67,7 @@ class TcgSpider():
 
         print(self.url.format(page))
 
-        soup, driver = self.Chef(url=self.url.format(page), driver=None)
+        soup, driver = self.chef(url=self.url.format(page), driver=None)
 
         products = soup.find_all('div', {'class': 'search-result__content'})
         page_data = []
@@ -91,16 +100,7 @@ class TcgSpider():
             product_name = product_name_element.get_attribute("innerHTML")
             data.update({"ProductName": product_name})
 
-            # product_name = card_soup.find(
-            #     'h1', {'class': 'product-details__name'})
-            # data.update({"ProductName": product_name.text})
 
-            # image
-            # image_src = card_soup.find('img',{"class" : "v-lazy-image v-lazy-image-loaded"})
-            # data.update({"image_src" : image_src['src']})
-            # print(src)
-
-            # get product price
             try:
                 product_price_element = WebDriverWait(
                     driver, 20).until(
@@ -116,13 +116,7 @@ class TcgSpider():
                     "innerHTML")
                 data.update({"Price": product_price})
 
-            # product_price = card_soup.find(
-            #     'span', {'class': 'spotlight__price'})
-            # data.update({"Price": product_price.text})
 
-            # product seller
-            # seller's name is usually represented as "sold by
-            # <cardseller's name>"
             try:
                 product_seller_present = WebDriverWait(
                     driver, 20).until(
@@ -186,45 +180,6 @@ class TcgSpider():
                 break
 
             yield data
-
-    def Chef(self, url: str, driver=None, verbose: bool = False):
-        """
-        establishes connection with hyperlinks and return soup object
-
-        Args:
-            url:str | url to scrape
-            driver:webdriver object | an already existing driver which has knowledge of a pre-assigned url
-            verbose: Optional parameter to enhance verbosity
-
-        Returns:
-            soup:beautiful soup object
-            driver:webdriver object
-            """
-
-        if driver is None:
-            driver = webdriver.Chrome(ChromeDriverManager().install())
-            #driver = webdriver.Chrome()
-
-        driver.get(url)
-
-        try:
-            WebDriverWait(
-                driver, 20).until(
-                EC.presence_of_element_located(
-                    (By.CLASS_NAME, "search-results")))
-
-        except TimeoutException as timeout:
-            print(
-                "Spider wasn't fast enough | Connection Timed Out - Error Code : 1001-prior | {}".format()),
-        except Exception as exec:
-            print("An error occured while scraping data {}".format(exec))
-
-        finally:
-
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            if verbose is not False:
-                print(soup.prettify())
-            return soup, driver
 
 
 if __name__ == "__main__":
